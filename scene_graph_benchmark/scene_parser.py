@@ -33,7 +33,7 @@ class SceneParserOutputs(object):
         return SceneParserOutputs(cast_predictions, cast_prediction_pairs)
 
 
-SCENE_PAESER_DICT = ["sg_baseline", "sg_imp", "sg_msdn", "sg_grcnn", "sg_reldn", "sg_neuralmotif"]
+SCENE_PARSER_DICT = ["sg_baseline", "sg_imp", "sg_msdn", "sg_grcnn", "sg_reldn", "sg_neuralmotif", "sg_vltranse"]
 
 
 class SceneParser(GeneralizedRCNN):
@@ -61,7 +61,7 @@ class SceneParser(GeneralizedRCNN):
 
         # TODO: add force_relations logic
         self.force_relations = cfg.MODEL.ROI_RELATION_HEAD.FORCE_RELATIONS
-        if cfg.MODEL.RELATION_ON and self.cfg.MODEL.ROI_RELATION_HEAD.ALGORITHM in SCENE_PAESER_DICT:
+        if cfg.MODEL.RELATION_ON and self.cfg.MODEL.ROI_RELATION_HEAD.ALGORITHM in SCENE_PARSER_DICT:
             self.relation_head = build_roi_relation_head(cfg, feature_dim)
         
         if cfg.MODEL.ATTRIBUTE_ON:
@@ -203,14 +203,11 @@ class SceneParser(GeneralizedRCNN):
             else:
                 targets = [target.to(self.device)
                         for target in targets if target is not None]
-
         scene_parser_losses = {}
 
         if not self.detector_pre_calculated:
             features = self.backbone(images.tensors)
-
             proposals, proposal_losses = self.rpn(images, features, targets)
-
             if self.detector_force_boxes:
                 proposals = [BoxList(target.bbox, target.size, target.mode) for target in targets]
                 x, predictions, detector_losses = self.roi_heads(features, proposals, targets)
@@ -316,6 +313,7 @@ class SceneParser(GeneralizedRCNN):
         # The predictions_pred contains idx_pairs (M*2) and scores (M*Pred_Cat); see Jianwei's code
         # TODO: add force_relations logic
         # pdb.set_trace()
+        # print("DEBUG SceneParser Generalized Relation RCNN Forward start calling relation_head function")
         x_pairs, prediction_pairs, relation_losses = self.relation_head(features, predictions, targets)
         # pdb.set_trace()
         scene_parser_losses.update(relation_losses)
@@ -337,7 +335,6 @@ class SceneParser(GeneralizedRCNN):
             predictions, prediction_pairs = self._post_processing_constrained(predictions, prediction_pairs)
         else:
             predictions, prediction_pairs = self._post_processing_unconstrained(predictions, prediction_pairs)
-
         return [SceneParserOutputs(prediction, prediction_pair)
                 for prediction, prediction_pair in zip(predictions, prediction_pairs)]
 

@@ -27,7 +27,7 @@ class FastRCNNLossComputation(object):
             fg_bg_pair_sampler,
             box_coder,
             cls_agnostic_bbox_reg=False,
-            use_matched_pairs_only=False,
+            use_matched_pairs_only=True,
             minimal_matched_pairs=10,
     ):
         """
@@ -49,6 +49,9 @@ class FastRCNNLossComputation(object):
         match_quality_matrix = boxlist_iou(target, proposal)
         temp = []
         target_box_pairs = []
+        subj_labels = []
+        obj_labels = []
+        target_gt_labels = target.get_field('labels')
         for i in range(match_quality_matrix.shape[0]):
             for j in range(match_quality_matrix.shape[0]):
                 match_i = match_quality_matrix[i].view(-1, 1)
@@ -63,7 +66,7 @@ class FastRCNNLossComputation(object):
                 boxj = target.bbox[j]
                 box_pair = torch.cat((boxi, boxj), 0)
                 target_box_pairs.append(box_pair)
-
+                
         match_pair_quality_matrix = torch.stack(temp, 0).view(len(temp), -1)
         target_box_pairs = torch.stack(target_box_pairs, 0)
         target_pair = BoxPairList(target_box_pairs, target.size, target.mode)
@@ -174,8 +177,32 @@ class FastRCNNLossComputation(object):
         self._proposal_pairs = proposal_pairs
         return proposal_pairs
 
+    def vltranse_sampling(self, cfg, proposals, targets):
+        """
+            VLTransE negative and positive sampling for proposal pairs
+        """
+        labels, proposal_pairs = self.prepare_targets(proposals, targets)
+
+        # Add predicate label
+        for labels_per_image, proposal_pairs_per_image in zip(
+                labels, proposal_pairs
+        ):
+            proposal_pairs_per_image.add_field("labels", labels_per_image)
+            # proposals_per_image.add_field(
+            #     "regression_targets", regression_targets_per_image
+            # )
+        # Add subject/object labels to each bbox pair
+
+        # Generate proposal_pairs
+        proposal_pairs = []
+
+
+        self._proposal_pairs = proposal_pairs
+        return proposal_pairs
+
     # select top K based on classification scores
     def sel_proposals(self, proposals, num_objs=64):
+        # print("DEBUG FastRCNNLossComputation sel_proposals")
         # select top ranked proposals from all ROIs.
         # for Neural Motif, typically 64 top proposals are returned
         for img_ind, props in enumerate(proposals):
@@ -231,8 +258,9 @@ class FastRCNNLossComputation(object):
         """Reldn Contrastive loss: generate a random sample of RoIs comprising foreground 
         and background examples.
         """
+        # print("DEBUG contrastive_loss_sample fn is called")
         proposal_box_pairs = []
-        assert len(proposals) == len(targets) == 1
+        assert len(proposals) == len(targets) == 1 #one box list containing multiple boxes
 
         box_subj = proposals[0].bbox
         box_obj = proposals[0].bbox
@@ -246,12 +274,18 @@ class FastRCNNLossComputation(object):
         proposal_idx_pairs_per_image = torch.cat((idx_subj.view(-1, 1), idx_obj.view(-1, 1)), 1)
 
         keep_idx = (proposal_idx_pairs_per_image[:, 0] != proposal_idx_pairs_per_image[:, 1]).nonzero(as_tuple=False).view(-1)
+        # This function filters out the proposal pairs that are equal in nature to ensure that the
+        #   pairs are differentiated
+        # These pairs are ordered pairs since the order of (subj, obj) matters.
 
         # if we filter non overlap bounding boxes
         if cfg.MODEL.ROI_RELATION_HEAD.FILTER_NON_OVERLAP:
             ious = boxlist_iou(proposals[0], proposals[0]).view(-1)
             ious = ious[keep_idx]
+            # the above two line compute the overlap of all possible pairs
             keep_idx = keep_idx[(ious > 0).nonzero(as_tuple=False).view(-1)]
+            # further filtered out pairs that contains bbox that not overlapped with one another
+
         # proposal_idx_pairs_per_image = proposal_idx_pairs_per_image[keep_idx]
         proposal_box_pairs_per_image = proposal_box_pairs_per_image[keep_idx]
         proposal_box_pairs.append(proposal_box_pairs_per_image)
@@ -322,6 +356,7 @@ class FastRCNNLossComputation(object):
         return proposal_pairs
     
     def contrastive_proposal_pair_transform(self, proposals, proposal_pairs):
+        # print("DEBUG contrastive_proposal_pair_transform fn is called")
         for proposal_per_image, proposal_pairs_per_image in zip(proposals, proposal_pairs):
             device = proposal_per_image.bbox.device
 
@@ -371,8 +406,9 @@ class FastRCNNLossComputation(object):
 
     def obj_classification_loss(self, proposals, class_logits):
         class_logits = cat(class_logits, dim=0)
+        # print("DEBUG obj_classification_loss fn call class_logits:", class_logits.shape)
         device = class_logits.device
-        labels = cat([proposal.get_field("gt_labels") for proposal in proposals], dim=0)
+        labels = cat([proposal.get_field("labels") for proposal in proposals], dim=0)
         classification_loss = F.cross_entropy(class_logits, labels)
         return classification_loss
     
@@ -407,6 +443,10 @@ class FastRCNNLossComputation(object):
         prd_label_pairs = cat([proposal.get_field("prd_label_pairs") for proposal in proposals], dim=0)
         binary_label_sub_pairs = cat([proposal.get_field("binary_label_sub_pairs") for proposal in proposals], dim=0)
         binary_label_obj_pairs = cat([proposal.get_field("binary_label_obj_pairs") for proposal in proposals], dim=0)
+
+        # print("DEBUG reldn_contrastive_losses fn call binary_label_sub_pairs:", binary_label_sub_pairs.shape)
+        # print("DEBUG reldn_contrastive_losses fn call binary_label_sub_pairs:", binary_label_obj_pairs.shape)
+        
         prd_scores_sbj_pos = class_logits[binary_label_sub_pairs==1]
         prd_scores_obj_pos = class_logits[binary_label_obj_pairs==1]
 

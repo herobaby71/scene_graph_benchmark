@@ -8,7 +8,8 @@ from .misc import ConvTranspose2d
 from .misc import BatchNorm2d
 from .misc import interpolate
 from .nms import nms
-from .roi_align import ROIAlign
+from torchvision.ops import RoIAlign
+
 from .roi_align import roi_align
 from .roi_pool import ROIPool
 from .roi_pool import roi_pool
@@ -19,7 +20,7 @@ from .dcn.deform_conv_module import DeformConv, ModulatedDeformConv, ModulatedDe
 from .dcn.deform_pool_func import deform_roi_pooling
 from .dcn.deform_pool_module import DeformRoIPooling, DeformRoIPoolingPack, ModulatedDeformRoIPoolingPack
 
-
+ROIAlign = RoIAlign
 __all__ = [
     "nms",
     "roi_align",

@@ -1,0 +1,394 @@
+DATALOADER:
+  ASPECT_RATIO_GROUPING: true
+  NUM_WORKERS: 4
+  SIZE_DIVISIBILITY: 32
+DATASETS:
+  FACTORY_TEST:
+  - VGTSVDataset
+  FACTORY_TRAIN:
+  - VGTSVDataset
+  LABELMAP_FILE: ''
+  TEST:
+  - visualgenome/test_danfeiX_relation.yaml
+  TRAIN:
+  - visualgenome/train_danfeiX_relation_nm.yaml
+DATA_DIR: ./datasets
+DISTRIBUTED_BACKEND: gloo
+DTYPE: float32
+INPUT:
+  BRIGHTNESS: 0.0
+  CONTRAST: 0.0
+  HORIZONTAL_FLIP_PROB_TRAIN: 0.5
+  HUE: 0.0
+  MAX_SIZE_TEST: 1000
+  MAX_SIZE_TRAIN: 1000
+  MIN_SIZE_TEST: 600
+  MIN_SIZE_TRAIN:
+  - 600
+  PIXEL_MEAN:
+  - 103.53
+  - 116.28
+  - 123.675
+  PIXEL_STD:
+  - 1.0
+  - 1.0
+  - 1.0
+  SATURATION: 0.0
+  TO_BGR255: true
+  VERTICAL_FLIP_PROB_TRAIN: 0.0
+LOG_LOSS_PERIOD: 20
+MODEL:
+  ATTRIBUTE_ON: false
+  BACKBONE:
+    CONV_BODY: R-50-FPN
+    FREEZE_CONV_BODY_AT: 2
+  CLS_AGNOSTIC_BBOX_REG: false
+  DEVICE: cuda
+  FBNET:
+    ARCH: default
+    ARCH_DEF: ''
+    BN_TYPE: bn
+    DET_HEAD_BLOCKS: []
+    DET_HEAD_LAST_SCALE: 1.0
+    DET_HEAD_STRIDE: 0
+    DW_CONV_SKIP_BN: true
+    DW_CONV_SKIP_RELU: true
+    KPTS_HEAD_BLOCKS: []
+    KPTS_HEAD_LAST_SCALE: 0.0
+    KPTS_HEAD_STRIDE: 0
+    MASK_HEAD_BLOCKS: []
+    MASK_HEAD_LAST_SCALE: 0.0
+    MASK_HEAD_STRIDE: 0
+    RPN_BN_TYPE: ''
+    RPN_HEAD_BLOCKS: 0
+    SCALE_FACTOR: 1.0
+    WIDTH_DIVISOR: 1
+  FPN:
+    USE_GN: false
+    USE_RELU: false
+  FREQ_PRIOR: visualgenome/label_danfeiX_clipped.freq_prior.npy
+  GROUP_NORM:
+    DIM_PER_GP: -1
+    EPSILON: 1.0e-05
+    NUM_GROUPS: 32
+  KEYPOINT_ON: false
+  MASK_ON: false
+  META_ARCHITECTURE: SceneParser
+  RELATION_ON: true
+  RESNETS:
+    BACKBONE_OUT_CHANNELS: 256
+    DEFORMABLE_GROUPS: 1
+    NUM_GROUPS: 1
+    RES2_OUT_CHANNELS: 256
+    RES5_DILATION: 1
+    STAGE_WITH_DCN:
+    - false
+    - false
+    - false
+    - false
+    STEM_FUNC: StemWithFixedBatchNorm
+    STEM_OUT_CHANNELS: 64
+    STRIDE_IN_1X1: true
+    TRANS_FUNC: BottleneckWithFixedBatchNorm
+    WIDTH_PER_GROUP: 64
+    WITH_MODULATED_DCN: false
+  RETINANET:
+    ANCHOR_SIZES: &id002
+    - 32
+    - 64
+    - 128
+    - 256
+    - 512
+    ANCHOR_STRIDES:
+    - 8
+    - 16
+    - 32
+    - 64
+    - 128
+    ASPECT_RATIOS: &id003
+    - 0.5
+    - 1.0
+    - 2.0
+    BBOX_REG_BETA: 0.11
+    BBOX_REG_WEIGHT: 4.0
+    BG_IOU_THRESHOLD: 0.4
+    FG_IOU_THRESHOLD: 0.5
+    INFERENCE_TH: 0.05
+    LOSS_ALPHA: 0.25
+    LOSS_GAMMA: 2.0
+    NMS_TH: 0.4
+    NUM_CLASSES: 81
+    NUM_CONVS: 4
+    OCTAVE: 2.0
+    PRE_NMS_TOP_N: 1000
+    PRIOR_PROB: 0.01
+    SCALES_PER_OCTAVE: 3
+    STRADDLE_THRESH: 0
+    USE_C5: true
+  RETINANET_ON: false
+  ROI_ATTRIBUTE_HEAD:
+    ATTR_EMD_DIM: 512
+    CLS_EMD_DIM: 256
+    FEATURE_EXTRACTOR: ResNet50Conv5ROIFeatureExtractor
+    LOSS_WEIGHT: 0.5
+    MAX_NUM_ATTR_PER_IMG: 100
+    MAX_NUM_ATTR_PER_OBJ: 16
+    MLP_HEAD_DIM: 1024
+    NUM_ATTRIBUTES: 401
+    POOLER_RESOLUTION: 14
+    POOLER_SAMPLING_RATIO: 0
+    POOLER_SCALES:
+    - 0.0625
+    POSTPROCESS_ATTRIBUTES_THRESHOLD: 0.0
+    PREDICTOR: AttributeRCNNPredictor
+    SHARE_BOX_FEATURE_EXTRACTOR: true
+  ROI_BOX_HEAD:
+    CONV_HEAD_DIM: 256
+    DILATION: 1
+    FEATURE_EXTRACTOR: FPN2MLPFeatureExtractor
+    FORCE_BOXES: false
+    MLP_HEAD_DIM: 1024
+    NUM_CLASSES: 151
+    NUM_STACKED_CONVS: 4
+    POOLER_RESOLUTION: 7
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES:
+    - 0.25
+    - 0.125
+    - 0.0625
+    - 0.03125
+    PREDICTOR: FPNPredictor
+    USE_GN: false
+  ROI_HEADS:
+    BATCH_SIZE_PER_IMAGE: 512
+    BBOX_REG_WEIGHTS:
+    - 10.0
+    - 10.0
+    - 5.0
+    - 5.0
+    BG_IOU_THRESHOLD: 0.5
+    DETECTIONS_PER_IMG: 100
+    FG_IOU_THRESHOLD: 0.5
+    MIN_DETECTIONS_PER_IMG: 1
+    NMS: 0.5
+    NMS_FILTER: 0
+    POSITIVE_FRACTION: 0.5
+    SCORE_THRESH: 0.05
+    USE_FPN: true
+  ROI_KEYPOINT_HEAD:
+    CONV_LAYERS:
+    - 512
+    - 512
+    - 512
+    - 512
+    - 512
+    - 512
+    - 512
+    - 512
+    FEATURE_EXTRACTOR: KeypointRCNNFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    NUM_CLASSES: 17
+    POOLER_RESOLUTION: 14
+    POOLER_SAMPLING_RATIO: 0
+    POOLER_SCALES: &id001
+    - 0.0625
+    PREDICTOR: KeypointRCNNPredictor
+    RESOLUTION: 14
+    SHARE_BOX_FEATURE_EXTRACTOR: true
+  ROI_MASK_HEAD:
+    CONV_LAYERS:
+    - 256
+    - 256
+    - 256
+    - 256
+    DILATION: 1
+    FEATURE_EXTRACTOR: ResNet50Conv5ROIFeatureExtractor
+    MLP_HEAD_DIM: 1024
+    POOLER_RESOLUTION: 14
+    POOLER_SAMPLING_RATIO: 0
+    POOLER_SCALES: *id001
+    POSTPROCESS_MASKS: false
+    POSTPROCESS_MASKS_THRESHOLD: 0.5
+    PREDICTOR: MaskRCNNC4Predictor
+    RESOLUTION: 14
+    SHARE_BOX_FEATURE_EXTRACTOR: true
+    USE_GN: false
+  ROI_RELATION_HEAD:
+    ALGORITHM: sg_vltranse
+    BACKBONE_FREEZE_PARAMETER: true
+    BATCH_SIZE_PER_IMAGE: 512
+    CONCATENATE_PROPOSAL_GT: false
+    CONTRASTIVE_LOSS:
+      BG_THRESH_HI: 0.5
+      BG_THRESH_LO: 0.0
+      FG_REL_FRACTION: 0.25
+      FG_REL_SIZE_PER_IM: 512
+      FG_THRESH: 0.5
+      NODE_CONTRASTIVE_MARGIN: 0.2
+      NODE_CONTRASTIVE_P_AWARE_MARGIN: 0.2
+      NODE_CONTRASTIVE_P_AWARE_WEIGHT: 0.1
+      NODE_CONTRASTIVE_SO_AWARE_MARGIN: 0.2
+      NODE_CONTRASTIVE_SO_AWARE_WEIGHT: 0.5
+      NODE_CONTRASTIVE_WEIGHT: 1.0
+      NODE_SAMPLE_SIZE: 128
+      USE_BG: true
+      USE_FLAG: true
+      USE_FREQ_BIAS: true
+      USE_NODE_CONTRASTIVE_LOSS: true
+      USE_NODE_CONTRASTIVE_P_AWARE_LOSS: true
+      USE_NODE_CONTRASTIVE_SO_AWARE_LOSS: true
+      USE_SPATIAL_FEAT: false
+      USE_SPO_AGNOSTIC_COMPENSATION: false
+    CONV_HEAD_DIM: 256
+    DETECTOR_BOX_THRESHOLD: 0.0
+    DETECTOR_PRE_CALCULATED: false
+    DILATION: 1
+    FEATURE_EXTRACTOR: FPN2MLPRelationFeatureExtractor
+    FILTER_NON_OVERLAP: true
+    FORCE_RELATIONS: false
+    GRCNN_FEATURE_UPDATE_STEP: 0
+    GRCNN_SCORE_UPDATE_STEP: 0
+    IMP_FEATURE_UPDATE_STEP: 0
+    MLP_HEAD_DIM: 1024
+    MODE: sgdet
+    MSDN_FEATURE_UPDATE_STEP: 0
+    NEURAL_MOTIF:
+      DEBUG: false
+      DROPOUT: 0.0
+      EDGE_LSTM_NUM_LAYERS: 4
+      EMBED_DIM: 100
+      GLOVE_PATH: glove/
+      HIDDEN_DIM: 256
+      NUM_OBJS: 64
+      OBJ_CLASSES_FN: visualgenome/label_danfeiX_clipped.obj_classes.txt
+      OBJ_FEAT_TO_DECODER: false
+      OBJ_FEAT_TO_EDGE: false
+      OBJ_LSTM_NUM_LAYERS: 2
+      ORDER: confidence
+      POS_BATCHNORM_MOMENTUM: 0.001
+      POS_EMBED_DIM: 128
+      REL_CLASSES_FN: visualgenome/label_danfeiX_clipped.rel_classes.txt
+      USE_TANH: false
+    NUM_CLASSES: 51
+    NUM_STACKED_CONVS: 4
+    POOLER_RESOLUTION: 7
+    POOLER_SAMPLING_RATIO: 2
+    POOLER_SCALES:
+    - 0.25
+    - 0.125
+    - 0.0625
+    - 0.03125
+    POSITIVE_FRACTION: 0.25
+    POSTPROCESS_METHOD: constrained
+    POSTPROCESS_SCORE_THRESH: 1.0e-05
+    POST_RELPN_PREPOSALS: 512
+    PREDICTOR: FPNRelationPredictor
+    ROI_BOX_HEAD_FREEZE_PARAMETER: true
+    RPN_FREEZE_PARAMETER: true
+    SEPERATE_SO_FEATURE_EXTRACTOR: true
+    SHARE_BOX_FEATURE_EXTRACTOR: false
+    SHARE_CONV_BACKBONE: false
+    TRIPLETS_PER_IMG: 100
+    UPDATE_BOX_REG: false
+    USE_BIAS: false
+    USE_GN: false
+    USE_ONLINE_OBJ_LABELS: false
+    USE_RELPN: false
+  RPN:
+    ANCHOR_SIZES: *id002
+    ANCHOR_STRIDE:
+    - 4
+    - 8
+    - 16
+    - 32
+    - 64
+    ASPECT_RATIOS: *id003
+    BATCH_SIZE_PER_IMAGE: 256
+    BG_IOU_THRESHOLD: 0.3
+    FG_IOU_THRESHOLD: 0.7
+    FORCE_BOXES: false
+    FPN_POST_NMS_PER_BATCH: true
+    FPN_POST_NMS_TOP_N_TEST: 1000
+    FPN_POST_NMS_TOP_N_TRAIN: 2000
+    MIN_SIZE: 0
+    NMS_THRESH: 0.7
+    POSITIVE_FRACTION: 0.5
+    POST_NMS_TOP_N_TEST: 1000
+    POST_NMS_TOP_N_TRAIN: 2000
+    PRE_NMS_TOP_N_TEST: 1000
+    PRE_NMS_TOP_N_TRAIN: 2000
+    RPN_HEAD: SingleConvRPNHead
+    STRADDLE_THRESH: 0
+    USE_FPN: true
+  RPN_ONLY: false
+  TRANSFORMER:
+    AVG_POOL: false
+    DROP: 0.0
+    DROP_PATH: 0.1
+    MSVIT:
+      ARCH: l1,h3,d96,n1,s1,g1,p4,f7,a0_l2,h3,d192,n2,s1,g1,p2,f7,a0_l3,h6,d384,n8,s1,g1,p2,f7,a0_l4,h12,d768,n1,s1,g0,p2,f7,a0
+      ATTN_TYPE: longformerhand
+      LN_EPS: 1.0e-06
+      MODE: 0
+      ONLY_GLOBAL: false
+      REDRAW_INTERVAL: 1000
+      SHARE_KV: true
+      SHARE_W: true
+      SW_EXACT: 0
+    NORM_EMBED: true
+    OUT_FEATURES: []
+    VITHEADARCH: l4,h12,d768,n1,s0,g0,p2,f7,a0
+  USE_FREQ_PRIOR: false
+  WEIGHT: models/vgvrd/vgnm_usefpTrue_objctx0_edgectx2/reldn.pth
+OUTPUT_DIR: ./models/relation_danfeiX_FPN50/
+PATHS_CATALOG: /home/thanhtran/dev/scene_graph_benchmark/maskrcnn_benchmark/config/paths_catalog.py
+SOLVER:
+  BASE_LR: 0.015
+  BIAS_LR_FACTOR: 2
+  CHECKPOINT_PERIOD: 5000
+  CLIP_GRADIENTS:
+    CLIP_TYPE: full_model
+    CLIP_VALUE: 1.0
+    ENABLED: false
+    NORM_TYPE: 2.0
+  GAMMA: 0.1
+  IMS_PER_BATCH: 1
+  MAX_ITER: 40000
+  MOMENTUM: 0.9
+  OPTIMIZER: SGD
+  STEPS:
+  - 20000
+  - 30000
+  TEST_PERIOD: 0
+  USE_AMP: false
+  WARMUP_FACTOR: 0.3333333333333333
+  WARMUP_ITERS: 500
+  WARMUP_METHOD: linear
+  WEIGHT_DECAY: 0.0001
+  WEIGHT_DECAY_BIAS: 0
+TEST:
+  BBOX_AUG:
+    ENABLED: false
+    H_FLIP: false
+    MAX_SIZE: 4000
+    SCALES: []
+    SCALE_H_FLIP: false
+  DETECTIONS_PER_IMG: 100
+  EXPECTED_RESULTS: []
+  EXPECTED_RESULTS_SIGMA_TOL: 4
+  GATHER_ON_CPU: true
+  IGNORE_BOX_REGRESSION: false
+  IMS_PER_BATCH: 1
+  OUTPUT_ATTRIBUTE_FEATURE: false
+  OUTPUT_FEATURE: true
+  OUTPUT_RELATION_FEATURE: false
+  SAVE_PREDICTIONS: false
+  SAVE_RESULTS_TO_TSV: true
+  SKIP_PERFORMANCE_EVAL: false
+  TSV_SAVE_SUBSET:
+  - rect
+  - class
+  - conf
+  - relations
+  - relation_scores
+  - relation_scores_all

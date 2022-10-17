@@ -9,8 +9,8 @@ import os
 import json
 
 import torch
-from maskrcnn_benchmark.config import cfg
 from scene_graph_benchmark.config import sg_cfg
+from maskrcnn_benchmark.config import cfg
 from maskrcnn_benchmark.data import make_data_loader
 from maskrcnn_benchmark.data.datasets.utils.load_files import config_dataset_file
 from maskrcnn_benchmark.engine.inference import inference
@@ -21,7 +21,7 @@ from maskrcnn_benchmark.utils.collect_env import collect_env_info
 from maskrcnn_benchmark.utils.comm import synchronize, get_rank
 from maskrcnn_benchmark.utils.logger import setup_logger
 from maskrcnn_benchmark.utils.miscellaneous import mkdir
-
+from maskrcnn_benchmark.utils.model_serialization import load_state_dict
 
 def run_test(cfg, model, distributed, model_name):
     if distributed and hasattr(model, 'module'):
@@ -188,6 +188,7 @@ def main():
     checkpointer = DetectronCheckpointer(cfg, model, save_dir=output_dir)
     ckpt = cfg.MODEL.WEIGHT if args.ckpt is None else args.ckpt
     _ = checkpointer.load(ckpt, use_latest=args.ckpt is None)
+    checkpointer.load_model(cfg.MODEL.WEIGHT, train=False) # custom load weight function for vltranse
     model_name = os.path.basename(ckpt)
 
     run_test(cfg, model, args.distributed, model_name)

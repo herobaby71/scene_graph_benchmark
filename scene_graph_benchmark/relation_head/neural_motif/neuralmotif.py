@@ -132,7 +132,7 @@ class NeuralMotif(nn.Module):
         obj_gt_labels = None
         if self.training:
             _, obj_gt_labels, _ \
-                = _get_tensor_from_boxlist(proposals, 'gt_labels')
+                = _get_tensor_from_boxlist(proposals, 'labels')
         elif self.mode == 'predcls':
             _, obj_gt_labels, _ \
                 = _get_tensor_from_boxlist(proposals, 'labels')

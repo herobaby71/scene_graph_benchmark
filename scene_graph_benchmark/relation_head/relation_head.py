@@ -21,6 +21,7 @@ from .imp.imp import build_imp_model
 from .msdn.msdn import build_msdn_model
 from .grcnn.grcnn import build_grcnn_model
 from .reldn.reldn import build_reldn_model
+from .vltranse.vltranse import build_vltranse_model
 
 
 class ROIRelationHead(torch.nn.Module):
@@ -46,7 +47,9 @@ class ROIRelationHead(torch.nn.Module):
             self.rel_predictor = build_grcnn_model(cfg, in_channels)
         elif cfg.MODEL.ROI_RELATION_HEAD.ALGORITHM == "sg_reldn":
             self.rel_predictor = build_reldn_model(cfg, in_channels)
-
+        elif cfg.MODEL.ROI_RELATION_HEAD.ALGORITHM == "sg_vltranse":
+            self.rel_predictor = build_vltranse_model(cfg, in_channels)
+            
         self.post_processor = make_roi_relation_post_processor(cfg)
         self.loss_evaluator = make_roi_relation_loss_evaluator(cfg)
 
@@ -58,7 +61,6 @@ class ROIRelationHead(torch.nn.Module):
 
         self.freq_dist = None
         if self.cfg.MODEL.USE_FREQ_PRIOR or self.use_bias:
-            print("Using frequency bias: ", cfg.MODEL.FREQ_PRIOR)
             self.freq_dist_file = op.join(cfg.DATA_DIR, cfg.MODEL.FREQ_PRIOR)
             self.freq_dist = torch.from_numpy(np.load(self.freq_dist_file)).float()
             if self.cfg.MODEL.USE_FREQ_PRIOR:
@@ -136,7 +138,7 @@ class ROIRelationHead(torch.nn.Module):
         """
         Arguments:
             features (list[Tensor]): feature-maps from possibly several levels
-            proposals (list[BoxList]): proposal boxes
+            proposals (list[BoxList]): proposal boxes from the region proposal network
             targets (list[BoxList], optional): the ground-truth targets.
 
         Returns:
@@ -146,27 +148,33 @@ class ROIRelationHead(torch.nn.Module):
             losses (dict[Tensor]): During training, returns the losses for the
                 head. During testing, returns an empty dict.
         """
+        #There are multiple use_relpn. Becareful when making changes
+        # print("DEBUG relation_head ROI_RELATION_HEAD forward initialize call", proposals)
         if self.training:
             # subsample proposals for Neural Motif
             # typically 64 per NM paper.
             if self.neural_motif_flag:
+                # print("DEBUG relation_head ROI_RELATION_HEAD forward create proposals based on neural_motif")
                 proposals = self.loss_evaluator.sel_proposals(proposals,
                                                               self.cfg.MODEL.ROI_RELATION_HEAD.NEURAL_MOTIF.NUM_OBJS)
             # Faster R-CNN subsamples during training the proposals with a fixed
             # positive / negative ratio
+            if (self.cfg.MODEL.ROI_RELATION_HEAD.USE_VLTRANSE):
+                proposal_pairs = self.loss_evaluator.subsample(proposals, targets)
             if self.cfg.MODEL.ROI_RELATION_HEAD.USE_RELPN:
                 proposal_pairs, loss_relpn = self.relpn(proposals, targets)
             else:
+                #The sampling module does not has a trainable parameter <- this was tackled with relpn
                 with torch.no_grad():
                     if self.cfg.MODEL.ROI_RELATION_HEAD.CONTRASTIVE_LOSS.USE_FLAG:
+                        #contrastive loss sampling is different from the sampling for other relationship head
                         proposal_pairs = self.loss_evaluator.contrastive_loss_sample(self.cfg, proposals, targets)
                     else:
                         # num relations sampled: ROI_HEADS.BATCH_SIZE_PER_IMAGE
                         # fraction of positive: ROI_HEADS.POSITIVE_FRACTION
                         proposal_pairs = self.loss_evaluator.subsample(proposals, targets)
-            
+            fields = ['box_features', 'labels']
             if self.cfg.MODEL.ROI_RELATION_HEAD.CONTRASTIVE_LOSS.USE_FLAG or self.cfg.MODEL.ROI_RELATION_HEAD.CONCATENATE_PROPOSAL_GT:
-                fields = ['box_features', 'labels', 'gt_labels']
                 # if self.cfg.TEST.OUTPUT_SCORES_ALL:
                 #     fields.append('scores_all')
                 #     fields.append('boxes_all')
@@ -178,12 +186,14 @@ class ROIRelationHead(torch.nn.Module):
                 self.loss_evaluator.contrastive_proposal_pair_transform(proposals, proposal_pairs)
 
         else:
+            #Test/Evaluation
             if self.force_relations:
                 proposal_pairs = self._force_relation_pairs(targets)
             else:
                 if self.cfg.MODEL.ROI_RELATION_HEAD.USE_RELPN:
                     proposal_pairs = self.relpn(proposals)
                 else:
+                    # the sampling for testing differs the sampling for training. This make total sense
                     proposal_pairs = self._get_proposal_pairs(proposals)
 
         if self.cfg.MODEL.USE_FREQ_PRIOR:
@@ -246,24 +256,33 @@ class ROIRelationHead(torch.nn.Module):
 
         loss_obj_classifier = torch.tensor(0, dtype=torch.float).to(pred_class_logits.device)
         if obj_class_logits is not None:
+            # print("loss_obj_classifier before evaluate loss:", loss_obj_classifier)
             loss_obj_classifier = self.loss_evaluator.obj_classification_loss(proposals, [obj_class_logits])
+            # print("loss_obj_classifier after evaluate loss:", loss_obj_classifier)
 
         if self.cfg.MODEL.ROI_RELATION_HEAD.CONTRASTIVE_LOSS.USE_FLAG:
+            # print("DEBUG relation_head forward 1") ##HERE##
             # cross entropy loss
+            # print("DEBUG relation_head forward pred_class_logits:", pred_class_logits.shape)
             loss_pred_classifier = self.loss_evaluator.cross_entropy_losses([pred_class_logits])
+
+            # [IMPLEMENT] : InfoNCE
 
             # contrastive loss
             if self.cfg.MODEL.ROI_RELATION_HEAD.CONTRASTIVE_LOSS.USE_NODE_CONTRASTIVE_LOSS:
+                print("DEBUG relation_head forward 2") ##HERE##
                 loss_contrastive_sbj, loss_contrastive_obj = self.loss_evaluator.reldn_contrastive_losses(
                     self.cfg, [pred_class_logits])
                 loss_contrastive_sbj = loss_contrastive_sbj * self.cfg.MODEL.ROI_RELATION_HEAD.CONTRASTIVE_LOSS.NODE_CONTRASTIVE_WEIGHT
                 loss_contrastive_obj = loss_contrastive_obj * self.cfg.MODEL.ROI_RELATION_HEAD.CONTRASTIVE_LOSS.NODE_CONTRASTIVE_WEIGHT
             if self.cfg.MODEL.ROI_RELATION_HEAD.CONTRASTIVE_LOSS.USE_NODE_CONTRASTIVE_SO_AWARE_LOSS:
+                print("DEBUG relation_head forward 3") ##HERE##
                 loss_so_contrastive_sbj, loss_so_contrastive_obj = self.loss_evaluator.reldn_so_contrastive_losses(
                     self.cfg, [pred_class_logits])
                 loss_so_contrastive_sbj = loss_so_contrastive_sbj * self.cfg.MODEL.ROI_RELATION_HEAD.CONTRASTIVE_LOSS.NODE_CONTRASTIVE_SO_AWARE_WEIGHT
                 loss_so_contrastive_obj = loss_so_contrastive_obj * self.cfg.MODEL.ROI_RELATION_HEAD.CONTRASTIVE_LOSS.NODE_CONTRASTIVE_SO_AWARE_WEIGHT
             if self.cfg.MODEL.ROI_RELATION_HEAD.CONTRASTIVE_LOSS.USE_NODE_CONTRASTIVE_P_AWARE_LOSS:
+                print("DEBUG relation_head forward 4") ##HERE##
                 loss_p_contrastive_sbj, loss_p_contrastive_obj = self.loss_evaluator.reldn_p_contrastive_losses(
                     self.cfg, [pred_class_logits])
                 loss_p_contrastive_sbj = loss_p_contrastive_sbj * self.cfg.MODEL.ROI_RELATION_HEAD.CONTRASTIVE_LOSS.NODE_CONTRASTIVE_P_AWARE_WEIGHT
@@ -278,7 +297,9 @@ class ROIRelationHead(torch.nn.Module):
                     loss_p_contrastive_sbj=loss_p_contrastive_sbj, loss_p_contrastive_obj=loss_p_contrastive_obj),
             )
         else:
+            # print("DEBUG relation_head forward 5")
             if self.cfg.MODEL.ROI_RELATION_HEAD.USE_RELPN:
+                # print("DEBUG relation_head forward 6")
                 loss_pred_classifier = self.relpn.pred_classification_loss([pred_class_logits])
                 return (
                     x,
@@ -288,6 +309,7 @@ class ROIRelationHead(torch.nn.Module):
                         loss_pred_classifier=loss_pred_classifier),
                 )
             else:
+                # print("DEBUG relation_head forward 7")
                 loss_pred_classifier = self.loss_evaluator([pred_class_logits])
                 return (
                     x,

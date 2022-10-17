@@ -5,6 +5,8 @@
 ![alt text](demo/R152FPN_demo.png "from https://storage.googleapis.com/openimages/web/index.html")
 
 
+ python -m torch.distributed.launch --nproc_per_node=$NGPUS tools/test_sg_net.py --config-file "sgg_configs/vg_vrd/rel_danfeiX_FPN50_reldn.yaml" MODEL.ROI_RELATION_HEAD.FORCE_RELATIONS True
+
 ## Highlights
 - **Upgrad to pytorch 1.7**
 - **Multi-GPU training and inference**
@@ -232,3 +234,45 @@ Please consider citing this project in your publications if it helps your resear
 maskrcnn-benchmark is released under the MIT license. See [LICENSE](LICENSE) for additional details.
 
 ## Acknowledgement
+
+rel_danfeiX_FPN50_nm on reldn model
+WARNING:scene_graph_generation.inference:===================sgdet(motif)=========================
+WARNING:scene_graph_generation.inference:sgdet-recall@20: 0.205253
+WARNING:scene_graph_generation.inference:sgdet-recall@50: 0.278763
+WARNING:scene_graph_generation.inference:sgdet-recall@100: 0.331617
+WARNING:scene_graph_generation.inference:=====================sgdet(IMP)=========================
+WARNING:scene_graph_generation.inference:sgdet-recall@20: 0.19695386743713691
+WARNING:scene_graph_generation.inference:sgdet-recall@50: 0.2693855105897706
+WARNING:scene_graph_generation.inference:sgdet-recall@100: 0.32284345627123573
+
+rel_danfeiX_FPN50_nm on nm model
+WARNING:scene_graph_generation.inference:===================sgdet(motif)=========================
+WARNING:scene_graph_generation.inference:sgdet-recall@20: 0.463245
+WARNING:scene_graph_generation.inference:sgdet-recall@50: 0.583180
+WARNING:scene_graph_generation.inference:sgdet-recall@100: 0.632929
+WARNING:scene_graph_generation.inference:=====================sgdet(IMP)=========================
+WARNING:scene_graph_generation.inference:sgdet-recall@20: 0.4604513057810958
+WARNING:scene_graph_generation.inference:sgdet-recall@50: 0.580698819057423
+WARNING:scene_graph_generation.inference:sgdet-recall@100: 0.6307575640660278
+
+rel_danfeiX_FPN50_grcnn on grcnn model
+WARNING:scene_graph_generation.inference:===================sgdet(motif)=========================
+WARNING:scene_graph_generation.inference:sgdet-recall@20: 0.520503
+WARNING:scene_graph_generation.inference:sgdet-recall@50: 0.598993
+WARNING:scene_graph_generation.inference:sgdet-recall@100: 0.617971
+WARNING:scene_graph_generation.inference:=====================sgdet(IMP)=========================
+WARNING:scene_graph_generation.inference:sgdet-recall@20: 0.5140701125079039
+WARNING:scene_graph_generation.inference:sgdet-recall@50: 0.5940545509914119
+WARNING:scene_graph_generation.inference:sgdet-recall@100: 0.6134694842772858
+
+rel_danfeiX_FPN50_grcnn_nobias
+ARNING:scene_graph_generation.inference:===================sgdet(motif)=========================
+WARNING:scene_graph_generation.inference:sgdet-recall@20: 0.425815
+WARNING:scene_graph_generation.inference:sgdet-recall@50: 0.507160
+WARNING:scene_graph_generation.inference:sgdet-recall@100: 0.533136
+WARNING:scene_graph_generation.inference:=====================sgdet(IMP)=========================
+WARNING:scene_graph_generation.inference:sgdet-recall@20: 0.41887951297670883
+WARNING:scene_graph_generation.inference:sgdet-recall@50: 0.5008335799910955
+WARNING:scene_graph_generation.inference:sgdet-recall@100: 0.5273810613421918
+
+MSDN no bias

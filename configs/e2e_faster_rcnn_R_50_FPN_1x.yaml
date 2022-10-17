@@ -21,8 +21,10 @@ MODEL:
     FEATURE_EXTRACTOR: "FPN2MLPFeatureExtractor"
     PREDICTOR: "FPNPredictor"
 DATASETS:
-  TRAIN: ("coco_2014_train", "coco_2014_valminusminival")
-  TEST: ("coco_2014_minival",)
+  FACTORY_TRAIN: ("VGTSVDataset",)
+  FACTORY_TEST: ("VGTSVDataset",)
+  TRAIN: ("visualgenome/train_danfeiX_relation_nm.yaml",)
+  TEST: ("visualgenome/test_danfeiX_relation.yaml",)
 DATALOADER:
   SIZE_DIVISIBILITY: 32
 SOLVER:

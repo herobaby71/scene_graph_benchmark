@@ -34,7 +34,9 @@ except ImportError:
 
 
 def train(cfg, local_rank, distributed):
+    print("DEBUG train start building model")
     model = build_detection_model(cfg)
+    print("DEBUG train build model complete")
     device = torch.device(cfg.MODEL.DEVICE)
     model.to(device)
 
@@ -64,7 +66,7 @@ def train(cfg, local_rank, distributed):
     )
     extra_checkpoint_data = checkpointer.load(cfg.MODEL.WEIGHT)
     arguments.update(extra_checkpoint_data)
-
+    # print("pass checkpoint")
     data_loader = make_data_loader(
         cfg,
         is_train=True,

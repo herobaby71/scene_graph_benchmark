@@ -93,8 +93,7 @@ def do_sg_evaluation(dataset, predictions, output_folder, logger):
     danfei_nums = {mode+str(key): np.mean(np.array(val)) for key, val in result_dict[mode + '_recall'].items()}
     danfei_metric.update(danfei_nums)
 
-    return {"danfei_metric": danfei_metric, "rowan_metric": rowan_metric}
-
+    return {"danfei_metric": danfei_metric, "rowan_metric": rowan_metric, "result_dict": result_dict}
 
 def evaluate(gt_classes, gt_boxes, gt_rels,
              obj_rois, obj_scores, obj_labels,

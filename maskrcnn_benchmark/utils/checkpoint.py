@@ -59,7 +59,6 @@ class Checkpointer(object):
             return {}
         self.logger.info("Loading checkpoint from {}".format(f))
         checkpoint = self._load_file(f)
-        self._load_model(checkpoint)
         if "optimizer" in checkpoint and self.optimizer:
             self.logger.info("Loading optimizer from {}".format(f))
             # self.optimizer.load_state_dict(checkpoint.pop("optimizer"))
@@ -70,6 +69,28 @@ class Checkpointer(object):
         # return any further checkpoint data
         return checkpoint
 
+    def load_model(self, f=None, use_latest=True, train=True):
+        if self.has_checkpoint() and use_latest:
+            # override argument with existing checkpoint
+            f = self.get_checkpoint_file()
+        if not f:
+            # no checkpoint could be found
+            self.logger.info("No checkpoint found. Initializing model from scratch")
+            return {}
+        checkpoint = self._load_file(f)
+    
+        self._load_model(checkpoint, train)
+        # return checkpoint.pop()
+
+    def _load_model(self, checkpoint, train):
+        if (train):
+            # Remove Relation Head for training from scratch
+            model_keys = list(checkpoint["model"].keys())
+            for key in model_keys:
+                if ("relation_head" in key):
+                    del checkpoint["model"][key]
+        load_state_dict(self.model, checkpoint.pop("model"))
+        
     def has_checkpoint(self):
         save_file = os.path.join(self.save_dir, "last_checkpoint")
         return os.path.exists(save_file)
@@ -94,8 +115,6 @@ class Checkpointer(object):
     def _load_file(self, f):
         return torch.load(f, map_location=torch.device("cpu"))
 
-    def _load_model(self, checkpoint):
-        load_state_dict(self.model, checkpoint.pop("model"))
 
 
 class DetectronCheckpointer(Checkpointer):

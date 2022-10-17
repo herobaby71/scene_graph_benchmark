@@ -6,6 +6,7 @@ Basic training script for PyTorch
 
 # Set up custom environment before nearly anything else is imported
 # NOTE: this should be the first import (no not reorder)
+from asyncio.log import logger
 from maskrcnn_benchmark.utils.env import setup_environment  # noqa F401 isort:skip
 
 import argparse
@@ -75,7 +76,12 @@ def train(cfg, local_rank, distributed):
     checkpointer = DetectronCheckpointer(
         cfg, model, optimizer, scheduler, output_dir, save_to_disk
     )
+    # print("DEBUG train scheduler:", scheduler)
+    # print("DEBUG train optimizer:", optimizer)
+    
     extra_checkpoint_data = checkpointer.load(cfg.MODEL.WEIGHT)
+    checkpointer.load_model(cfg.MODEL.WEIGHT) # custom load weight function for vltranse
+    
     arguments.update(extra_checkpoint_data)
 
     data_loader = make_data_loader(
@@ -111,7 +117,6 @@ def train(cfg, local_rank, distributed):
     )
 
     return model
-
 
 def run_test(cfg, model, distributed):
     if distributed:
@@ -217,8 +222,8 @@ def main():
 
     model = train(cfg, args.local_rank, args.distributed)
 
-    if not args.skip_test:
-        run_test(cfg, model, args.distributed, model_name="model_final")
+    # if not args.skip_test:
+    #     run_test(cfg, model, args.distributed)
 
 
 if __name__ == "__main__":

@@ -145,17 +145,17 @@ class RelationTSVDataset(TSVYamlDataset):
         annotations = self.get_annotations(idx)
         target = self.get_target_from_annotations(annotations, img_size)
         detection_boxlist = self.load_detection_result(idx, img_size, conf_threshold=self.predictedbbox_conf_threshold, detections_per_img=self.detections_per_img) if self.detector_pre_calculated else None
-        img, target, detection_boxlist = self.apply_transforms(img, target, detection_boxlist)
-        new_img_size = img.shape[1:]
-        scale = math.sqrt(float(new_img_size[0]*new_img_size[1])/float(img_size[0]*img_size[1]))
+        # img, target, detection_boxlist = self.apply_transforms(img, target, detection_boxlist)
+        # new_img_size = img.shape[1:]
+        # scale = math.sqrt(float(new_img_size[0]*new_img_size[1])/float(img_size[0]*img_size[1]))
 
         if self.relation_on and self.contrastive_loss_on and target is not None:
             self.contrastive_loss_target_transform(target)
         
         if self.detector_pre_calculated:
-            return img, (target, detection_boxlist), idx, scale
+            return img, (target, detection_boxlist), idx
 
-        return img, target, idx, scale
+        return img, target, idx
 
     def contrastive_loss_target_transform(self, target):
         # add relationship annotations

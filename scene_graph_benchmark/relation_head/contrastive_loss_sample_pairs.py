@@ -10,6 +10,9 @@ import numpy.random as npr
 
 def add_rel_blobs(cfg, blobs, proposals, targets):
     """Add blobs needed for training Fast R-CNN style models."""
+    # Here, blobs are dictionaries containing the necessary keys.
+    # These keys will be populated in the following function call
+    
     # Sample training RoIs from each image and append them to the blob lists
     for (blob, proposals_per_image, targets_per_image) in zip(blobs, proposals, targets):
         frcn_blobs = _sample_pairs(cfg, proposals_per_image, targets_per_image)
@@ -42,6 +45,8 @@ def _sample_pairs(cfg, proposals_per_image, targets_per_image):
     fg_pairs_per_image = cfg.MODEL.ROI_RELATION_HEAD.CONTRASTIVE_LOSS.FG_REL_SIZE_PER_IM
     pairs_per_image = int(cfg.MODEL.ROI_RELATION_HEAD.CONTRASTIVE_LOSS.FG_REL_SIZE_PER_IM \
                           / cfg.MODEL.ROI_RELATION_HEAD.CONTRASTIVE_LOSS.FG_REL_FRACTION)  # need much more pairs since it's quadratic
+
+    #the rel_fraction ratio is .25, indicating that there are four more times of pairs per image
     max_pair_overlaps = targets_per_image.get_field('max_pair_overlaps')
 
     gt_pair_inds = np.where(max_pair_overlaps > 1.0 - 1e-4)[0]
@@ -247,11 +252,13 @@ def _sample_pairs(cfg, proposals_per_image, targets_per_image):
 
 
 def add_rel_proposals(proposals, targets, proposal_box_pairs):
+    # [THEORY] there should be a filtering of the targets from the given proposal_box_pairs
     sbj_box_list = []
     obj_box_list = []
     for i, (proposals_per_image, targets_per_image, proposal_box_pairs_per_image) \
                         in enumerate(zip(proposals, targets, proposal_box_pairs)):
-        im_det_boxes = proposals_per_image.bbox.cpu().numpy()
+        im_det_boxes = proposals_per_image.bbox.cpu().numpy() #det stands for detection
+        #this should be consistent with the 49 total proposals from earlier
         sbj_gt_boxes = targets_per_image.get_field('sbj_gt_boxes').cpu().numpy()
         obj_gt_boxes = targets_per_image.get_field('obj_gt_boxes').cpu().numpy()
         unique_sbj_gt_boxes = np.unique(sbj_gt_boxes, axis=0)
@@ -270,6 +277,7 @@ def add_rel_proposals(proposals, targets, proposal_box_pairs):
             (proposal_box_pairs_per_image.cpu().numpy()[:,:4], sbj_gt_boxes_paired_w_det, sbj_det_boxes_paired_w_gt, sbj_gt_boxes_paired_w_gt)))
         obj_box_list.append(np.concatenate(
             (proposal_box_pairs_per_image.cpu().numpy()[:,4:], obj_det_boxes_paired_w_gt, obj_gt_boxes_paired_w_det, obj_gt_boxes_paired_w_gt)))
+            
     _merge_paired_boxes_into_roidb(proposals, targets, sbj_box_list, obj_box_list)
     _add_prd_class_assignments(proposals, targets)
 

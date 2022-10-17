@@ -32,6 +32,8 @@ class TSVDataset(object):
         self.label_tsv = None if label_file is None else TSVFile(label_file)
         self.hw_tsv = None if hw_file is None else TSVFile(hw_file)
         self.line_list = load_linelist_file(linelist_file)
+        if (self.line_list):
+            self.reverse_line_list = dict((v,k) for k,v in enumerate(self.line_list))
 
     def __len__(self):
         if self.line_list is None:
@@ -51,6 +53,9 @@ class TSVDataset(object):
 
     def get_line_no(self, idx):
         return idx if self.line_list is None else self.line_list[idx]
+    
+    def get_reverse_line_no(self, line):
+        return line if self.reverse_line_list is None else self.reverse_line_list[line]
 
     def get_image(self, idx): 
         line_no = self.get_line_no(idx)
@@ -58,6 +63,12 @@ class TSVDataset(object):
         # use -1 to support old format with multiple columns.
         img = img_from_base64(row[-1])
         return img
+    
+    def get_image_by_line_no(self, line_no):
+        row = self.img_tsv.seek(line_no)
+        img = img_from_base64(row[-1])
+        return img
+
 
     def get_annotations(self, idx):
         line_no = self.get_line_no(idx)

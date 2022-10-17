@@ -22,6 +22,7 @@ from yacs.config import CfgNode as CN
 _C = CN()
 
 _C.MODEL = CN()
+_C.MODEL.ATTRIBUTE_ON = False
 _C.MODEL.RPN_ONLY = False
 _C.MODEL.MASK_ON = False
 _C.MODEL.RETINANET_ON = False

@@ -1,6 +1,6 @@
 MODEL:
   META_ARCHITECTURE: "SceneParser"
-  WEIGHT: "models/vgvrd/vgnm_usefpTrue_objctx0_edgectx2/model_final.pth"
+  WEIGHT: "models/vgvrd/vgnm_usefpTrue_objctx0_edgectx2/reldn.pth"
   USE_FREQ_PRIOR: False
   FREQ_PRIOR: "visualgenome/label_danfeiX_clipped.freq_prior.npy"
   RESNETS:
@@ -74,10 +74,10 @@ SOLVER:
   WEIGHT_DECAY: 0.0001
   MAX_ITER: 40000
   STEPS: (20000,30000)
-  IMS_PER_BATCH: 16
+  IMS_PER_BATCH: 1
   CHECKPOINT_PERIOD: 5000
 TEST:
-  IMS_PER_BATCH: 8
+  IMS_PER_BATCH: 1
   SAVE_PREDICTIONS: False
   SAVE_RESULTS_TO_TSV: True
   TSV_SAVE_SUBSET: ['rect', 'class', 'conf', 'relations', 'relation_scores', 'relation_scores_all']

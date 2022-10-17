@@ -138,8 +138,10 @@ def cat_boxlist_with_fields(bboxes, fields):
 
     Arguments:
         bboxes (list[BoxList])
+            (proposals, targets)
         fields (list[string])
     """
+
     assert isinstance(bboxes, (list, tuple))
     assert all(isinstance(bbox, BoxList) for bbox in bboxes)
 
@@ -150,11 +152,24 @@ def cat_boxlist_with_fields(bboxes, fields):
     assert all(bbox.mode == mode for bbox in bboxes)
 
     fields = set(fields)
-    assert all(fields.issubset(set(bbox.fields())) for bbox in bboxes)
-
+    # print("DEBUG cat_boxlist_with_fields fields:", set(fields))
+    # print("DEBUG cat_boxlist_with_fields bbox fields:", [bbox.fields() for bbox in bboxes])
+    
+    # for bbox in bboxes:
+    #      if (not fields.issubset(set(bbox.fields()))):
+    #         print("DEBUG cat_boxlist_with_fields failed:", set(bbox.fields()))
+            
+    # assert all(fields.issubset(set(bbox.fields())) for bbox in bboxes)
+    # [I MADE A CHANGE HERE]
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
     cat_boxes = BoxList(_cat([bbox.bbox for bbox in bboxes], dim=0), size, mode)
 
     for field in fields:
+        for bbox in bboxes:
+            if (not bbox.has_field(field)):
+                print("Bbox does not have this field:", field)
+                print("Check if bbox has the field label:", bbox.has_field("label"))
+
         data = _cat([bbox.get_field(field) for bbox in bboxes], dim=0)
         cat_boxes.add_field(field, data)
 

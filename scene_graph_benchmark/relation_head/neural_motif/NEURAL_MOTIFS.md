@@ -109,6 +109,3 @@ There are several key variables/parameters that are special to Neural Motif head
     
     ROI_RELATION_HEAD.NEURAL_MOTIF.GLOVE_PATH : glove db path for obj embeddings.
 
-
-  
-    

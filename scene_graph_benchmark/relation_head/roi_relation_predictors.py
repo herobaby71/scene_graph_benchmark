@@ -45,6 +45,29 @@ class FPNPredictor(nn.Module):
 
         return scores
 
+@registry.ROI_RELATION_PREDICTOR.register("FPNPredictorVariableOut")
+class FPNPredictorVariableOut(nn.Module):
+    def __init__(self, cfg, in_channels, num_classes=-1):
+        super(FPNPredictorVariableOut, self).__init__()
+        if (num_classes == -1):
+            num_classes = cfg.MODEL.ROI_RELATION_HEAD.NUM_CLASSES
+        representation_size = in_channels
+
+        self.cls_score = nn.Linear(representation_size, num_classes)
+
+        nn.init.normal_(self.cls_score.weight, std=0.01)
+        nn.init.constant_(self.cls_score.bias, 0)
+
+    def forward(self, x):
+        if x.ndimension() == 4:
+            assert list(x.shape[2:]) == [1, 1]
+            x = x.view(x.size(0), -1)
+        scores = self.cls_score(x)
+
+        return scores
+
+
+
 # NeuralMotifPredictor
 @registry.ROI_RELATION_PREDICTOR.register("NeuralMotifPredictor")
 class NeuralMotifPredictor(nn.Module):
